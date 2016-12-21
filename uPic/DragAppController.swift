@@ -77,6 +77,10 @@ class DragAppController: NSObject, NSWindowDelegate, NSDraggingDestination {
                 informativeText: "需要配置七牛信息")
             return false;
         }
+        
+        let isStyle = userDefaults.integer(forKey: "isStyle")
+        print (isStyle)
+        let style = userDefaults.string(forKey: "style")
 
         
         let qiNiu = QNUploadManager()!
@@ -87,8 +91,8 @@ class DragAppController: NSObject, NSWindowDelegate, NSDraggingDestination {
             let filename = NSUUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
             let suffix = filePath.components(separatedBy: ".").last!
             let key = "\(filename).\(suffix)"
-            print(key)
-            print(token)
+            //print(key)
+            //print(token)
 
             qiNiu.putFile(filePath, key: key, token: token, complete: {info, key, resp -> Void in
                 //print(info!)
@@ -96,13 +100,18 @@ class DragAppController: NSObject, NSWindowDelegate, NSDraggingDestination {
                 if info != nil && info?.error != nil {
                     
                     UserNotificationController.shared.displayNotification(
-                        withTitle: "图片上传失败",
+                        withTitle: "图片上传失败，请检查设置信息",
                         informativeText: filePath)
                     
                 } else {
                 
                     let image = NSImage(contentsOfFile: filePath)
-                    let imageUrl = "\(domain)/\(key!)"
+                    var imageUrl = "\(domain)/\(key!)"
+                    
+                    if  isStyle == 1 {
+                        imageUrl += style!
+                    }
+                    
                     let uploadImageRow = UploadImageRowStruct(image: image!, url: imageUrl)
                     self.uploadImageView.uploadImageRows.append(uploadImageRow)
                     self.uploadImageView.uploadImageTable.reloadData()

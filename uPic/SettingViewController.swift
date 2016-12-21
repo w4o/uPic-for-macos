@@ -15,7 +15,9 @@ class SettingViewController: NSViewController {
     @IBOutlet var secretKeyInput: NSTextField!
     @IBOutlet var bucketInput: NSTextField!
     @IBOutlet var domainInput: NSTextField!
-
+    @IBOutlet var styleInput: NSTextField!
+    @IBOutlet var styleChk: NSButton!
+    
     var userDefaults: UserDefaults!
     var settingMeta: [String: NSTextField]!
 
@@ -27,9 +29,19 @@ class SettingViewController: NSViewController {
             "secretKey": secretKeyInput,
             "bucket": bucketInput,
             "domain": domainInput,
+            "style": styleInput
         ]
         userDefaults = NSUserDefaultsController.shared().defaults
         displaySettings()
+        
+    }
+    
+    func styleChkState(){
+        if styleChk.state == 0 {
+            styleInput.isEnabled = false
+        } else {
+            styleInput.isEnabled = true
+        }
     }
 
     func displaySettings() {
@@ -38,6 +50,14 @@ class SettingViewController: NSViewController {
                 input.stringValue = value
             }
         }
+        
+        styleChk.state = userDefaults.integer(forKey: "isStyle")
+        
+        styleChkState()
+    }
+    
+    @IBAction func styleChkAction(_ sender: NSButton) {
+        styleChkState();
     }
 
     @IBAction func confirmAction(_ sender: NSButton) {
@@ -45,10 +65,14 @@ class SettingViewController: NSViewController {
             let setting = input.stringValue
             userDefaults.set(setting, forKey: key)
         }
+        
+        userDefaults.set(styleChk.state, forKey: "isStyle")
 
         userDefaults.synchronize()
         self.view.window?.close()
     }
+    
+    
 
     @IBAction func cancelAction(_ sender: NSButton) {
         self.view.window?.close()
