@@ -22,7 +22,10 @@ class DragAppController: NSObject, NSWindowDelegate, NSDraggingDestination {
 
     let dragApp = NSStatusBar.system().statusItem(withLength: NSVariableStatusItemLength)
     var userDefaults : UserDefaults!
-
+    
+    
+    @IBOutlet weak var progressIndicator: NSProgressIndicator!
+    
     override func awakeFromNib() {
         let imageItem = dragMenu.item(withTitle: "Image")!
         imageItem.view = uploadImageView
@@ -78,12 +81,18 @@ class DragAppController: NSObject, NSWindowDelegate, NSDraggingDestination {
             return false;
         }
         
+        showStatusItemProgress()
+        
         let isStyle = userDefaults.integer(forKey: "isStyle")
         print (isStyle)
         let style = userDefaults.string(forKey: "style")
 
         
         let qiNiu = QNUploadManager()!
+        
+        
+        let fileCount = filePaths.count
+        var uploadIndex = 0
         
         for path in filePaths {
             let token = getQiniuToken()
@@ -92,10 +101,15 @@ class DragAppController: NSObject, NSWindowDelegate, NSDraggingDestination {
             let suffix = filePath.components(separatedBy: ".").last!
             let key = "\(filename).\(suffix)"
             //print(key)
-            //print(token)
+            print(token)
 
             qiNiu.putFile(filePath, key: key, token: token, complete: {info, key, resp -> Void in
-                //print(info!)
+                
+                uploadIndex += 1
+                
+                //Swift.print("========================")
+                //Swift.print(info?.error )
+                //Swift.print("========================")
                 
                 if info != nil && info?.error != nil {
                     
@@ -120,9 +134,14 @@ class DragAppController: NSObject, NSWindowDelegate, NSDraggingDestination {
                     UserNotificationController.shared.displayNotification(
                         withTitle: "图片上传成功",
                         informativeText: filePath)
-                    }
-                }, option: nil)
+                }
+                
+                if uploadIndex == fileCount {
+                    self.hideStatusItemProgress()
+                }
+            }, option: nil)
         }
+        
         return true
     }
 
@@ -147,5 +166,35 @@ class DragAppController: NSObject, NSWindowDelegate, NSDraggingDestination {
 
     @IBAction func quitApp(_ sender: NSMenuItem) {
         NSApplication.shared().terminate(self)
+    }
+    
+    // 显示状态栏菜单饼型进度
+    func showStatusItemProgress() {
+        
+        if let button = dragApp.button {
+            // FIXME: it works, but obviously not good.
+            let frame = NSRect(x: 6, y: 2, width: 18, height: 18)
+            let progressIndicator = NSProgressIndicator(frame: frame)
+            progressIndicator.style = .spinningStyle
+            progressIndicator.isIndeterminate = true
+            progressIndicator.startAnimation(Any.self)
+            self.progressIndicator = progressIndicator
+            
+            // 当添加进度后，发现状态栏frame大小错误了，没找到解决办法，但是填充一个图片可以解决这个尺寸错误问题
+            dragApp.image = NSImage(named: "emptyIcon")
+            dragApp.image?.isTemplate = true
+            button.addSubview(progressIndicator)
+        }
+    }
+    // 隐藏状态栏菜单饼型进度
+    func hideStatusItemProgress(){
+        
+        if let button = dragApp.button {
+            button.subviews.removeAll()
+        }
+        
+        let icon = NSImage(named: "statusIcon")
+        icon?.isTemplate = true
+        dragApp.image = icon
     }
 }
